@@ -1,17 +1,20 @@
 <h1 align="center">Jellyfin TubeArchivist Plugin</h1>
 
-<p align="center">
-<img alt="Plugin Banner" src="https://raw.githubusercontent.com/tubearchivist/tubearchivist-jf-plugin/master/images/logo.png"/>
-<br/>
-</p>
+## Forked for Playlist Sorting
 
-> [!IMPORTANT]
-> Jellyfin release cycle has changed in the past few months and now it is shorter than before. The plugin supports only the latest Jellyfin release, in order to continue using this plugin with all the latest features you will need to upgrade your Jellyfin installation.
-> The same rule applies to TubeArchivist: the plugin is only guaranteed to work with the latest TubeArchivist version.
+--
 
-> [!WARNING]
-> Jellyfin 10.10 introduced a bug that prevents the plugin to correctly create Season folders by year. The bug has been finally solved on the Jellyfin codebase, but, until the next minor release, a manual build of the Jellyfin branch `release-10.10.z` is required in order to get the fix running.<br>
-> This is not a plugin bug, any issue opened about this bug will be immediately closed!
+## The What and Why
+
+This fork, was made as a personal AI Slop project. 
+
+I love the idea behind TubeArchivist, and having it all working automagikally through Jellyfin. But I want the videos sorted by Playlist, NOT by year. I watch a couple of toYoubers that make LetPlay's, with this plugin, I things weren't sorted right for me. I want to be able to goto Jellyfin, select Gopher, then Click on Skyrim or Stalker 2. Thats it.
+
+So I vibe slopped this with my own [Opencode Setup](https://github.com/7hr08ik/AMPG-Opencode-and-Friends), on locally hosted AI. 
+
+All this does, is add the ability to sort by Playlist instead of Year in Jellyfin. The rest of this Readme is from the original repo.
+
+--
 
 ## About
 

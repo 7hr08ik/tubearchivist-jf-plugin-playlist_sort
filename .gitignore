@@ -1,6 +1,20 @@
+# Original
 bin/
 obj/
 .vs/
 .idea/
 artifacts
 nuget.config
+
+# AI Bits
+.codegraph/
+.opencode/
+.vscode/
+AGENTS.md
+opencode.jsonc
+PROJECT_LOG.md
+PROJECT_PLAN.md
+
+# Testing
+tests/
+.env
