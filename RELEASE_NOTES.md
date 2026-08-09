@@ -1,4 +1,8 @@
-# Release notes — Sort seasons by TubeArchivist playlist
+# Release notes — 1.5.0.0 — Sort seasons by TubeArchivist playlist
+
+Upgrades in place over 1.4.4.0. The plugin GUID is unchanged, so replacing the DLL and restarting
+Jellyfin is an upgrade, not a second install — there is nothing to uninstall first. Existing
+settings are preserved; the new options default to off.
 
 ## What's new
 
@@ -25,8 +29,14 @@ playlists are appended at the end and never renumber existing seasons.
 
 ### Enabling it
 
-**Dashboard → Plugins → TubeArchivist Metadata → "Group seasons by TubeArchivist playlist"**, then run
-**Refresh metadata** with **"Replace all metadata"** enabled on the library.
+1. Replace `plugins/TubeArchivistMetadata/Jellyfin.Plugin.TubeArchivistMetadata.dll` with the new build.
+2. **Restart Jellyfin.** The Season metadata fetcher repair below runs at startup only.
+3. Check the log for `Enabled the TubeArchivist Season metadata fetcher on library <name>`.
+4. **Dashboard → Plugins → TubeArchivist Metadata → "Group seasons by TubeArchivist playlist"** → Save.
+5. On the library: **Refresh metadata** → **"Replace all metadata"**.
+
+The setting must be enabled *before* the refresh. Note that step 5 is a metadata refresh, not a
+library scan — a scan only looks for new files and will not re-season episodes already imported.
 
 Also new: an **Episode numbering scheme** option of *Playlist index*, which numbers episodes by their
 position within the playlist rather than by date.
