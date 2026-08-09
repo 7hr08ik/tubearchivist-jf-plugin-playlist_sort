@@ -38,6 +38,13 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.Tasks
     /// and resume positions are unaffected, and Jellyfin removes the emptied seasons itself.
     /// </para>
     /// <para>
+    /// Reassigning the episodes is only half the work. Seasons are separate items, and refreshing
+    /// an episode neither creates the season it now belongs to nor re-parents it, so between the
+    /// two phases the library shows the previous seasons standing empty. The affected series are
+    /// therefore refreshed once the episodes are done, which is what drives Jellyfin's season
+    /// creation and removes the seasons left behind.
+    /// </para>
+    /// <para>
     /// There is no default trigger. Regrouping a library is disruptive and must be an explicit
     /// choice rather than a side effect of saving the settings page.
     /// </para>
@@ -55,6 +62,12 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.Tasks
     /// </remarks>
     public class RebuildPlaylistSeasonsTask : IScheduledTask
     {
+        /// <summary>
+        /// Share of the reported progress given to the episode pass, leaving the rest for the
+        /// series pass so the task does not appear finished while work remains.
+        /// </summary>
+        private const double EpisodePhaseShare = 90.0;
+
         private readonly ILogger<Plugin> _logger;
         private readonly ILibraryManager _libraryManager;
         private readonly IProviderManager _providerManager;
@@ -179,16 +192,99 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.Tasks
                 }
 
                 processed++;
-                progress.Report(processed * 100.0 / episodes.Count);
+
+                // The episode pass owns the first 90%; the series pass reports the rest.
+                progress.Report(processed * EpisodePhaseShare / episodes.Count);
             }
 
+            var seriesFailed = await RebuildSeasonsAsync(episodes, progress, cancellationToken).ConfigureAwait(false);
+
             _logger.LogInformation(
-                "Rebuilt {Cleared} episode season(s) with {Failed} failure(s) in {Elapsed}. Season names refresh on the next library scan.",
+                "Rebuilt {Cleared} episode season(s) with {Failed} failure(s) in {Elapsed}.",
                 cleared,
-                failed,
+                failed + seriesFailed,
                 DateTime.Now - start);
 
             progress.Report(100);
+        }
+
+        /// <summary>
+        /// Refreshes the series the rebuilt episodes belong to, so their seasons are recreated.
+        /// </summary>
+        /// <remarks>
+        /// Only the affected series are refreshed rather than the whole library: the episodes are
+        /// already in hand, so the distinct parents are known, and this leaves other libraries
+        /// untouched. A default refresh is enough - the season structure is rebuilt from the
+        /// episodes' current <c>ParentIndexNumber</c>, so there is no need to re-fetch metadata
+        /// that the episode pass has just written.
+        /// </remarks>
+        /// <param name="episodes">The episodes that were rebuilt.</param>
+        /// <param name="progress">Progress reporter, covering the final tenth of the run.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The number of series that could not be refreshed.</returns>
+        private async Task<int> RebuildSeasonsAsync(
+            IReadOnlyList<Episode> episodes,
+            IProgress<double> progress,
+            CancellationToken cancellationToken)
+        {
+            // Resolved through the injected manager rather than Episode.Series, which reads the
+            // static BaseItem.LibraryManager.
+            var series = episodes
+                .Select(episode => episode.SeriesId)
+                .Where(id => !id.Equals(Guid.Empty))
+                .Distinct()
+                .Select(id => _libraryManager.GetItemById(id) as Series)
+                .Where(parent => parent != null)
+                .ToList();
+
+            if (series.Count == 0)
+            {
+                _logger.LogWarning(
+                    "Could not resolve the series for any rebuilt episode, so their seasons were left as they were. A library scan will correct them.");
+                return 0;
+            }
+
+            _logger.LogInformation("Rebuilding the seasons of {SeriesCount} series.", series.Count);
+
+            var refreshed = 0;
+            var failed = 0;
+
+            foreach (var parent in series)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
+                {
+                    var refreshOptions = new MetadataRefreshOptions(new DirectoryService(_fileSystem))
+                    {
+                        MetadataRefreshMode = MetadataRefreshMode.Default,
+                        ImageRefreshMode = MetadataRefreshMode.None,
+                        ReplaceAllMetadata = false,
+                        ReplaceAllImages = false
+                    };
+
+                    await _providerManager.RefreshSingleItem(parent!, refreshOptions, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    // Logged loudly: a series left unrefreshed keeps its previous seasons, which
+                    // appear empty because their episodes have already moved elsewhere.
+                    failed++;
+                    _logger.LogError(
+                        ex,
+                        "Could not rebuild the seasons of {SeriesName}. Its seasons may appear empty until the next library scan.",
+                        parent!.Name);
+                }
+
+                refreshed++;
+                progress.Report(EpisodePhaseShare + (refreshed * (100.0 - EpisodePhaseShare) / series.Count));
+            }
+
+            return failed;
         }
 
         /// <inheritdoc/>
