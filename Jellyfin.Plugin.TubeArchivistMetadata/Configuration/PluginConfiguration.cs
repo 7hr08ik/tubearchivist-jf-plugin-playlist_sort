@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Jellyfin.Plugin.TubeArchivistMetadata.Utilities;
 using MediaBrowser.Model.Plugins;
 using Microsoft.Extensions.Logging;
@@ -47,6 +49,9 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.Configuration
             TAJFProgressTaskInterval = 60;
             JFTAPlaylistsSyncTaskInterval = 60;
             TAJFPlaylistsSyncTaskInterval = 60;
+            SortSeasonsByPlaylist = false;
+            SeasonFetcherAutoEnabled = false;
+            PlaylistSeasonMap = new Collection<PlaylistSeasonMapEntry>();
         }
 
         /// <summary>
@@ -190,6 +195,49 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.Configuration
         /// Gets or sets the preferred numbering scheme for episodes (index number) in Jellyfin.
         /// </summary>
         public NumberingScheme EpisodeNumberingScheme { get; set; } = NumberingScheme.Default;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to group episodes into seasons by TubeArchivist
+        /// playlist instead of by upload year.
+        /// </summary>
+        /// <remarks>
+        /// Changing this setting requires a "Refresh metadata" with "Replace all metadata" enabled:
+        /// Jellyfin only overwrites an existing season name when replacing metadata.
+        /// </remarks>
+        public bool SortSeasonsByPlaylist { get; set; }
+
+        /// <summary>
+        /// Gets the persisted TubeArchivist playlist to Jellyfin season number associations.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Populated automatically; not user editable. Entries are append-only so season numbers
+        /// remain stable once assigned.
+        /// </para>
+        /// <para>
+        /// <see cref="JsonIncludeAttribute"/> is required and must not be removed. Jellyfin persists
+        /// plugin configuration as XML, but the plugin configuration API endpoint deserializes the
+        /// posted body with System.Text.Json, which ignores non-public setters. Without this
+        /// attribute the collection is dropped whenever the configuration page is saved, and
+        /// <c>BasePlugin.UpdateConfiguration</c> then writes the emptied collection back to disk.
+        /// A public setter is not an option because it violates CA2227.
+        /// This is unrelated to the Newtonsoft usage of the TubeArchivist API models.
+        /// </para>
+        /// </remarks>
+        [JsonInclude]
+        public Collection<PlaylistSeasonMapEntry> PlaylistSeasonMap { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the one time migration which enables this
+        /// plugin's Season metadata fetcher on existing libraries has already run.
+        /// </summary>
+        /// <remarks>
+        /// Libraries created before the Season provider existed store an empty Season fetcher list,
+        /// which Jellyfin treats as "all disabled" rather than "use the defaults". The migration
+        /// repairs that once; keeping this flag means a fetcher removed by hand afterwards stays
+        /// removed instead of being re-added on every restart.
+        /// </remarks>
+        public bool SeasonFetcherAutoEnabled { get; set; }
 
         /// <summary>
         /// Gets the playback progress owners Jellyfin usernames to synchronize data from TubeArchivist.
