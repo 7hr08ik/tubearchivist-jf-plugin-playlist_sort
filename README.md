@@ -1,20 +1,67 @@
-<h1 align="center">Jellyfin TubeArchivist Plugin</h1>
+<h1 align="center">Jellyfin TubeArchivist Plugin<br><sub>playlist_sort fork</sub></h1>
 
-## Forked for Playlist Sorting
+<p align="center">
+  Brings <a href="https://www.tubearchivist.com/">TubeArchivist</a> metadata into Jellyfin &mdash;
+  and groups a channel's videos into seasons by <b>playlist</b> instead of by <b>upload year</b>.
+</p>
 
---
+<p align="center">
+  <img alt="License GPLv3" src="https://img.shields.io/badge/license-GPLv3-blue.svg">
+  <img alt="Jellyfin 10.11" src="https://img.shields.io/badge/Jellyfin-10.11-purple.svg">
+  <img alt="dotnet 9" src="https://img.shields.io/badge/.NET-9.0-512BD4.svg">
+  <img alt="Version 1.5.0" src="https://img.shields.io/badge/version-1.5.0.0-green.svg">
+</p>
 
-## The What and Why
+---
 
-This fork, was made as a personal AI Slop project. 
+## What this fork changes
 
-I love the idea behind TubeArchivist, and having it all working automagically through Jellyfin. But I want the videos sorted by Playlist, NOT by year. I watch a couple of YouTubers that make LetPlay's, and with this plugin things weren't sorted right for me. I want seasons Named as the playlist is named.
+Upstream sorts a channel's videos into seasons **by upload year**, which mixes unrelated series
+together &mdash; one year can hold episodes from three different Let's Plays. This fork adds an
+option to use the **TubeArchivist playlist** as the season instead:
 
-So I vibe slopped this with my own [Opencode Setup](https://github.com/7hr08ik/AMPG-Opencode-and-Friends), on locally hosted AI and some free APIs.
+| Upstream | This fork |
+|---|---|
+| `Season 2012` | `Lets Play Skyrim (Chapter 1) : Orc Warlock` |
+| `Season 2013` | `Let's Play Falskaar (Skyrim)` |
+| `Season 2014` | `S.T.A.L.K.E.R. 2 : Heart of Chornobyl` |
 
-All this does, is add the ability to sort by Playlist instead of Year in Jellyfin. I updated the Readme to reflect my changes.
+Everything else is upstream's, unchanged. See **[Playlist seasons](#playlist-seasons)** for the
+detail, or jump to [Quick start](#quick-start).
 
---
+<details>
+<summary>Why this exists</summary>
+
+<br>
+
+This fork was made as a personal AI Slop project.
+
+I love the idea behind TubeArchivist, and having it all working automagically through Jellyfin. But
+I want the videos sorted by Playlist, NOT by year. I watch a couple of YouTubers that make
+LetPlay's, and with this plugin things weren't sorted right for me. I want seasons Named as the
+playlist is named.
+
+So I vibe slopped this with my own
+[Opencode Setup](https://github.com/7hr08ik/AMPG-Opencode-and-Friends), on locally hosted AI and
+some free APIs.
+
+</details>
+
+## Quick start
+
+1. [Build from source](#build-from-source) &mdash; `dotnet publish ... -c Release -o bin`
+2. Copy the DLL into `plugins/TubeArchivistMetadata` and **restart Jellyfin**
+3. [Configure](#configuration) your TubeArchivist address and API key
+4. Tick **Group seasons by TubeArchivist playlist** and save
+5. Already have a library? Run the
+   [Rebuild playlist seasons](#converting-an-existing-library) task
+
+## Contents
+
+- [Installation](#installation) &middot; [Configuration](#configuration) &middot; [Use the plugin](#use-the-plugin)
+- [Playlist seasons](#playlist-seasons) &mdash; the fork's feature
+- [Synchronization](#synchronization) &middot; [Tasks intervals](#tasks-intervals) &middot; [Episode numbering](#episode-numbering)
+- [Build](#build) &middot; [Contributing](#contributing) &middot; [License](#license)
 
 ## About
 
@@ -44,9 +91,16 @@ The plugin interacts with TubeArchivist APIs to fetch videos and channels metada
 > source and copy the DLL in. It appears in the dashboard as
 > **TubeArchivist Metadata-playlist_sort** so you can tell it apart from the upstream plugin.
 
-### Build from source
+### Requirements
 
-Requires the [.NET 9 SDK](https://dotnet.microsoft.com/download).
+| | |
+|---|---|
+| Jellyfin | 10.11 or later |
+| TubeArchivist | a running instance, reachable from Jellyfin |
+| Library type | a `Shows` library pointed at your TubeArchivist media |
+| To build | [.NET 9 SDK](https://dotnet.microsoft.com/download) |
+
+### Build from source
 
 ```bash
 git clone https://github.com/7hr08ik/tubearchivist-jf-plugin.git
@@ -136,136 +190,128 @@ This plugin has different bidirectional sycnhronization features, that can be co
 
 ## Playlist seasons
 
-*This section covers the fork's addition. Everything above and below it is upstream behaviour.*
+*The fork's feature. Everything outside this section is upstream behaviour.*
 
-By default a channel's videos are split into seasons by the year they were published, which mixes
-unrelated playlists together - a single year can contain episodes from three different Let's Play
-series. With **Group seasons by TubeArchivist playlist** enabled, each playlist becomes its own
-season, named as it is in TubeArchivist:
-
-```
-Before                          After
-------                          -----
-Season 2012                     Lets Play Skyrim (Chapter 1) : Orc Warlock
-Season 2013                     Lets Play Skyrim (Chapter 2) : Orc Warlock
-Season 2014                     Let's Play Falskaar (Skyrim)
-...                             Let's Play Beyond Skyrim - Bruma
-                                S.T.A.L.K.E.R. 2 : Heart of Chornobyl
-```
-
+Each TubeArchivist playlist becomes its own Jellyfin season, named as it is in TubeArchivist.
 Seasons are ordered chronologically by the publish date of each playlist's first video, so a channel
-reads in the order it was made. Once assigned, a playlist keeps its season number permanently - new
-playlists are appended at the end and never renumber existing seasons. Videos belonging to no
-playlist are collected into a single season named **Unsorted**.
+reads in the order it was made. Once assigned, a playlist keeps its season number permanently &mdash;
+new playlists are appended at the end and never renumber existing seasons. Videos in no playlist go
+to a season named **Unsorted**.
 
 ### Enabling it
 
-1. **Dashboard -> Plugins -> TubeArchivist Metadata-playlist_sort**, tick
-   **Group seasons by TubeArchivist playlist**, and save.
-2. If your library already contains episodes, run the
-   [Rebuild playlist seasons](#converting-an-existing-library) task.
+1. **Dashboard &rarr; Plugins &rarr; TubeArchivist Metadata-playlist_sort**
+2. Tick **Group seasons by TubeArchivist playlist**, save
+3. If the library already has episodes, run
+   [Rebuild playlist seasons](#converting-an-existing-library)
 
-A library scanned for the first time with the setting already enabled is grouped by playlist
-immediately and needs no further action.
+A library scanned for the first time with the setting already on is grouped by playlist immediately
+and needs nothing further.
 
 > [!IMPORTANT]
-> **Episodes already imported will not move on their own.** Jellyfin stores each episode's season
-> number on the item and will not overwrite it, even during a "Replace all metadata" refresh - it
-> seeds the refresh with the existing value, so the plugin is never asked for a new one. Measured on
-> a 116-episode library: a full replace moved **zero** episodes. Use the task below.
+> **Episodes already imported will not move on their own** &mdash; not even with "Replace all
+> metadata". Jellyfin seeds each refresh with the episode's existing season number, so the plugin is
+> never asked for a new one. Measured on a 116-episode library: a full replace moved **zero**
+> episodes. Use the task below.
 
 ### Converting an existing library
 
-**Dashboard -> Scheduled Tasks -> Rebuild playlist seasons -> run manually.**
+**Dashboard &rarr; Scheduled Tasks &rarr; Rebuild playlist seasons &rarr; run manually.**
 
-The task clears each episode's stored season number in libraries matching the configured collection
-title, refreshes them so the current setting decides the season afresh, then refreshes the affected
-series to rebuild the seasons themselves. It works in both directions: enabling the setting regroups
-a year-based library by playlist, and disabling it returns episodes to upload-year seasons.
+Clears each episode's stored season number, refreshes so the current setting decides afresh, then
+refreshes the affected series to rebuild the seasons themselves. Works both ways &mdash; enabling
+regroups by playlist, disabling returns to upload-year seasons.
 
-Both phases matter. Reassigning an episode does not create the season it now belongs to, so without
-the second phase the library shows the previous seasons standing empty. Progress reflects this - the
-first 90% is the episodes, the remainder is the seasons. **Let it reach 100%.**
-
-The task has no automatic trigger. Regrouping a library is disruptive enough that it should happen
-when you choose, not as a side effect of saving a settings page.
-
-**It deletes nothing.** Only the season number field on each episode is modified. Verified on a
-116-episode library: media files untouched, watch state and resume positions preserved, no orphaned
-seasons left behind - Jellyfin removes the now-empty old seasons itself. Season names may briefly
-read "Season Unknown" immediately afterwards; that is a cached field on the episode and the next
-library refresh restores the correct name.
-
-If a series fails to refresh, an error naming it is logged and the remaining series still run. That
-series keeps its old seasons, which appear empty; a library scan corrects it.
+- **Progress is 90% episodes, 10% seasons. Let it reach 100%.** Reassigning an episode does not
+  create the season it now belongs to; without the second phase the old seasons stand empty.
+- **It deletes nothing.** Only the season number field changes. Verified on 116 episodes: media
+  untouched, watch state and resume positions preserved, no orphaned seasons. Jellyfin removes the
+  emptied seasons itself.
+- **No automatic trigger.** Regrouping a library should happen when you choose, not as a side effect
+  of saving a settings page.
+- Season names may briefly read "Season Unknown"; the next library refresh restores them.
+- If a series fails to refresh, it is logged by name and the rest still run. A library scan fixes it.
 
 > [!WARNING]
-> **Never delete a Series or Episode to reset state.** In Jellyfin, `DELETE /Items/{id}` on a
-> file-backed item **deletes the media from disk**, and there is no trash or recycle bin. Deleting
-> seasons by hand does not work either: Jellyfin derives a season's id from its series and index
-> number, and deleting one does not clear its episodes' stored season number, so a rescan recreates
-> exactly the same seasons. Measured: 30 seasons deleted, 0 episodes moved.
+> **Never delete a Series or Episode to reset state.** `DELETE /Items/{id}` on a file-backed item
+> **deletes the media from disk** &mdash; there is no trash or recycle bin.
+>
+> Deleting seasons by hand does not work either. Jellyfin derives a season's id from its series and
+> index number, and deleting one does not clear its episodes' stored season number, so a rescan
+> recreates exactly the same seasons. Measured: 30 deleted, 0 episodes moved.
 
-### Existing libraries: the Season metadata fetcher is enabled for you
+<details>
+<summary><b>If you keep <code>.nfo</code> files next to your media, they win</b></summary>
+
+<br>
+
+An `.nfo` containing `<season>` is a local metadata source, and Jellyfin prefers it over anything a
+plugin supplies. Those episodes stay where the file says, regardless of the setting or the task.
+Measured: an episode with `<season>1</season>` ignored the rebuild entirely, then moved correctly
+the moment the file was removed.
+
+Either delete the `.nfo` files, remove their `<season>` element, or disable the "Nfo" metadata
+reader for the library.
+
+The task itself will **not** modify or create `.nfo` files &mdash; it saves below Jellyfin's "manual
+edit" threshold precisely so the NFO savers stay out of the way. Verified against a hand-written
+`.nfo`: byte-identical after a full run.
+
+</details>
+
+<details>
+<summary><b>The Season metadata fetcher is enabled for you on upgrade</b></summary>
+
+<br>
 
 Jellyfin stores enabled metadata fetchers per library *and per item type*, and a library created
-before this fork has an **empty** Season list. That is not harmless - Jellyfin treats an empty list
-as "all disabled" rather than falling back to defaults, so the Season provider would never run:
-seasons keep their `Season 1` names, nothing appears in the log, and no error is raised.
+before this fork has an **empty** Season list. Jellyfin treats empty as "all disabled" rather than
+falling back to defaults, so the Season provider would never run: seasons keep their `Season 1`
+names, nothing appears in the log, and no error is raised.
 
-On first startup after installing, the plugin checks every library that already uses TubeArchivist
-as its *Series* fetcher and adds the Season fetcher where missing:
+On first startup the plugin checks every library already using TubeArchivist as its *Series* fetcher
+and adds the Season fetcher where missing:
 
 ```
 [INF] Enabled the TubeArchivist Season metadata fetcher on library YouTube.
 ```
 
-Libraries that do not use this plugin are left untouched. **This runs once, not on every startup** -
-if you remove the Season fetcher yourself afterwards it stays removed. To check it by hand:
-**Libraries -> *your library* -> Manage -> Metadata downloaders (Season) -> TubeArchivist**.
+Other libraries are untouched. **This runs once, not on every startup** &mdash; remove the fetcher
+yourself and it stays removed. To check by hand: **Libraries &rarr; *your library* &rarr; Manage
+&rarr; Metadata downloaders (Season)**.
 
-### If you keep `.nfo` files next to your media, they win
+</details>
 
-An `.nfo` containing `<season>` is a local metadata source, and Jellyfin prefers it over anything a
-plugin supplies, so those episodes stay where the file says regardless of the setting or the task.
-Measured: an episode with `<season>1</season>` in its `.nfo` ignored the rebuild entirely, then moved
-correctly the moment the file was removed. Either delete the `.nfo` files, remove their `<season>`
-element, or disable the "Nfo" metadata reader for the library.
+<details>
+<summary><b>Behaviour notes and limitations</b></summary>
 
-The task itself will **not** modify or create `.nfo` files - it saves below Jellyfin's "manual edit"
-threshold precisely so the NFO savers stay out of the way. Verified against a hand-written `.nfo`:
-byte-identical after a full run.
+<br>
 
-### Turning the setting off
-
-Disabling it stops the plugin supplying season names, but Jellyfin keeps the names it already stored;
-a refresh alone will not revert them. Run the **Rebuild playlist seasons** task to return the library
-to upload-year seasons.
-
-### Notes and limitations
-
-- **Season names come from TubeArchivist**, with whitespace normalised and a 120-character cap.
-  Punctuation is preserved so seasons read as they do in TubeArchivist.
-- **A video in several playlists** is placed in the lowest-numbered matching season, chosen
+- **Turning the setting off** stops the plugin supplying names, but Jellyfin keeps the names it
+  already stored. Run the rebuild task to return to upload-year seasons.
+- **Season names** come from TubeArchivist with whitespace normalised and a 120-character cap.
+  Punctuation is preserved.
+- **A video in several playlists** goes to the lowest-numbered matching season, chosen
   deterministically so it does not move between refreshes.
 - **If TubeArchivist is unreachable**, episodes fall back to upload-year grouping and a warning is
-  logged. They are not swept into *Unsorted*, because that would be sticky and unrepairable.
-- **Playlist data is cached for 30 minutes.** A newly created playlist may take that long to appear;
-  restart Jellyfin to pick it up immediately.
-- **Season 0 is never used.** Jellyfin reserves it for Specials and force-renames it.
-- The playlist-to-season map is stored in the plugin configuration and survives restarts. Season
-  numbers outside the valid range are rejected and reallocated automatically.
-- Season numbers are allocated across the whole library, so a second channel's first playlist
-  continues from where the previous channel left off rather than restarting at 1. This is invisible
-  while playlist names are shown.
+  logged. They are not swept into *Unsorted*, which would be sticky and unrepairable.
+- **Playlist data is cached for 30 minutes.** A new playlist may take that long to appear; restart
+  Jellyfin to pick it up immediately.
+- **Season 0 is never used** &mdash; Jellyfin reserves it for Specials and force-renames it.
+- **Season numbers are allocated library-wide**, so a second channel's first playlist continues from
+  where the previous channel left off rather than restarting at 1. Invisible while names are shown.
+- The playlist-to-season map lives in the plugin configuration and survives restarts. Out-of-range
+  numbers are rejected and reallocated automatically.
+
+</details>
 
 ### Other fixes in this fork
 
-- **TubeArchivist playlists were fetched twice.** Paging continued from `CurrentPage + 1`, but
-  TubeArchivist treats `?page=0` and `?page=1` as the same first page, so every playlist on it was
-  duplicated (50 results for 29 real playlists). This also affected the playlist-sync tasks.
+- **Playlists were fetched twice.** Paging continued from `CurrentPage + 1`, but TubeArchivist
+  treats `?page=0` and `?page=1` as the same first page, duplicating every playlist on it (50
+  results for 29 real playlists). Also affected the playlist-sync tasks.
 - **Redirects during playlist paging.** The base URL was prefixed onto an already-absolute
-  `Location` header, producing an invalid URI. Redirects are now followed as-is.
+  `Location` header, producing an invalid URI. Now followed as-is.
 
 ## Tasks intervals
 <p>Since many of the feature are implemented as background tasks periodically executing, in the `Tasks intervals` section you will find the settings to adjust this period in seconds.<br>
@@ -288,15 +334,27 @@ The options correlate with:
 
 ## Build
 
-1. To build this plugin you will need [.Net 9.x](https://dotnet.microsoft.com/download/dotnet/9.0).
+Build and install instructions are in [Installation](#installation) above.
 
-2. Build plugin with following command
-  ```
-  $ dotnet publish Jellyfin.Plugin.TubeArchivistMetadata --configuration Release --output bin
-  ```
+For development, `dotnet build` is the lint gate &mdash; the project sets `TreatWarningsAsErrors`
+with StyleCop and the Jellyfin ruleset, so warnings fail the build.
 
-3. Place **only** `bin/Jellyfin.Plugin.TubeArchivistMetadata.dll` in the `plugins/TubeArchivistMetadata` folder (you might need to create the folders) of your Jellyfin installation. `dotnet publish` also emits around 30 Jellyfin dependency DLLs into `bin/`; copying those shadows the server's own assemblies and can stop the plugin loading
+## Contributing
+
+This is a personal fork with a narrow purpose, so it is not looking for feature contributions.
+
+- **Bugs in playlist seasons** &mdash; open an issue here, and include your Jellyfin version, the
+  plugin version from the dashboard, and the relevant log lines.
+- **Anything else** &mdash; please take it
+  [upstream](https://github.com/tubearchivist/tubearchivist-jf-plugin). Fixes landing there benefit
+  everyone and eventually reach this fork.
+
+Two upstream bug fixes carried here (playlist pagination and redirect handling) are independent of
+the season feature and are welcome to be taken upstream by anyone.
 
 ## License
 
 This plugins code and packages are distributed under the GPLv3 License. See [LICENSE](./LICENSE) for more information.
+
+Forked from [tubearchivist/tubearchivist-jf-plugin](https://github.com/tubearchivist/tubearchivist-jf-plugin).
+All credit for the original plugin goes to its authors.
