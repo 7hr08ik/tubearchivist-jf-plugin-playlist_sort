@@ -26,7 +26,7 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata
     /// <summary>
     /// The main plugin.
     /// </summary>
-    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
+    public partial class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         private readonly IUserManager _userManager;
         private readonly IUserDataManager _userDataManager;
@@ -67,6 +67,8 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata
             _userManager = userManager;
             _userDataManager = userDataManager;
             userDataManager.UserDataSaved += OnWatchedStatusChange;
+
+            EnableSeasonMetadataFetcher();
 
             logger.LogInformation("{Message}", "Collection display name: " + Instance?.Configuration.CollectionTitle);
             logger.LogInformation("{Message}", "TubeArchivist API URL: " + Instance?.Configuration.TubeArchivistUrl);
