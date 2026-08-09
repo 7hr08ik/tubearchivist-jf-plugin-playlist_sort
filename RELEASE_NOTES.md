@@ -29,6 +29,10 @@ playlists are appended at the end and never renumber existing seasons.
 
 ### Enabling it
 
+> **Existing libraries:** episodes already imported into year-based seasons will **not** move.
+> `ParentIndexNumber` is sticky in Jellyfin — see "Turning the setting off" below for the measured
+> result and the conversion procedure. A brand-new library groups by playlist immediately.
+
 1. Replace `plugins/TubeArchivistMetadata/Jellyfin.Plugin.TubeArchivistMetadata.dll` with the new build.
 2. **Restart Jellyfin.** The Season metadata fetcher repair below runs at startup only.
 3. Check the log for `Enabled the TubeArchivist Season metadata fetcher on library <name>`.
@@ -97,8 +101,28 @@ season — but Jellyfin keeps the name it already has. A refresh alone will not 
 The same applies to season *membership*: an episode's `ParentIndexNumber` is sticky, so a refresh
 cannot move episodes back into year-based seasons.
 
+**Measured, not assumed.** On a 116-episode library the setting was disabled and a full
+"Replace all metadata" refresh was run to completion. **Zero episodes changed season**, and all 30
+seasons kept their playlist names. This holds even though `MergeData` does gate on
+`replaceData || !target.ParentIndexNumber.HasValue`, because `MetadataService` seeds the working
+item with the *existing* `ParentIndexNumber` before any provider runs, so the value is never empty
+and the plugin is not asked to supply a new one.
+
 **To fully revert**, disable the setting and then remove the affected seasons so Jellyfin recreates
 them on the next scan.
+
+### The same limit applies when first enabling the feature
+
+This is the important consequence for existing installations. Because `ParentIndexNumber` is sticky
+in *both* directions, enabling the setting and refreshing will **not** move episodes that Jellyfin
+has already imported into year-based seasons. Those episodes keep their existing season.
+
+New episodes imported after enabling the setting are grouped by playlist correctly, and a library
+scanned for the first time with the setting already on is grouped entirely by playlist — verified on
+a brand-new library.
+
+To convert an existing year-grouped library, delete its **Season** entities (never the Series) and
+rescan.
 
 > ⚠️ **Do not delete the Series to reset it.** In Jellyfin, `DELETE /Items/{id}` on a Series, Season
 > or Episode **deletes the media files from disk**. There is no trash or recycle bin. Delete only the
