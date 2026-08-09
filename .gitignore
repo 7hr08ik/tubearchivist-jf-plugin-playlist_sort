@@ -18,4 +18,4 @@ PROJECT_PLAN.md
 # Testing
 tests/
 .env
-scripts/make-test-media.sh
+scripts/
