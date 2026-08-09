@@ -6,9 +6,15 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata
     public static class Constants
     {
         /// <summary>
-        /// Plugin name.
+        /// Plugin name, as shown in the Jellyfin dashboard.
         /// </summary>
-        public const string PluginName = "TubeArchivist Metadata";
+        /// <remarks>
+        /// The <c>-playlist_sort</c> suffix marks this fork so it is distinguishable from the
+        /// upstream plugin at a glance. This is a display name only. It must not be confused with
+        /// <see cref="ProviderName"/>, which is persisted against every item, nor with the assembly
+        /// name, from which Jellyfin derives the configuration file name.
+        /// </remarks>
+        public const string PluginName = "TubeArchivist Metadata-playlist_sort";
 
         /// <summary>
         /// Plugin GUID.
