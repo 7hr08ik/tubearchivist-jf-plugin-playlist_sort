@@ -137,6 +137,18 @@ seasons left behind. Jellyfin removes the now-empty old seasons by itself.
 Season *names* may briefly read "Season Unknown" immediately afterwards. That is a cached field on
 the episode and the next library refresh restores the correct name.
 
+**If you keep `.nfo` files next to your media, they win.** An `.nfo` containing `<season>` is a local
+metadata source, and Jellyfin prefers it over anything this plugin supplies, so those episodes stay
+where the file says regardless of the setting or the task. Measured: an episode with
+`<season>1</season>` in its `.nfo` ignored the rebuild entirely, then moved correctly the moment the
+file was removed. Either delete the `.nfo` files, remove their `<season>` element, or disable the
+"Nfo" metadata reader for the library.
+
+The task itself will **not** modify or create `.nfo` files. It saves below Jellyfin's "manual edit"
+threshold precisely so the NFO savers stay out of the way — otherwise Jellyfin would rewrite any
+existing `.nfo` while the season number was cleared, silently stripping `<season>` from it. Verified
+against a hand-written `.nfo`: byte-identical after a full run.
+
 > **Deleting the seasons by hand does not work** — worth stating, because it is the obvious approach.
 > Jellyfin derives a season's item id deterministically from its series and index number, and
 > deleting a season does not clear its episodes' stored season number, so a rescan recreates exactly

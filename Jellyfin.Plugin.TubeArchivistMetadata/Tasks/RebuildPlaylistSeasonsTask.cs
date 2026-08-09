@@ -41,6 +41,17 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.Tasks
     /// There is no default trigger. Regrouping a library is disruptive and must be an explicit
     /// choice rather than a side effect of saving the settings page.
     /// </para>
+    /// <para>
+    /// Episodes are processed one at a time. Each refresh reaches TubeArchivist, so running them
+    /// concurrently would multiply the load on it and interleave badly with a scheduled library
+    /// scan. The cost is duration: expect roughly a second per episode.
+    /// </para>
+    /// <para>
+    /// On a library large enough to run longer than <c>PlaylistCache</c>'s lifetime, the cache can
+    /// refresh part way through. If playlists changed in TubeArchivist during the run, episodes
+    /// handled before and after that point can be grouped against different playlist data. Running
+    /// the task again once TubeArchivist has settled resolves it.
+    /// </para>
     /// </remarks>
     public class RebuildPlaylistSeasonsTask : IScheduledTask
     {
@@ -128,10 +139,19 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.Tasks
 
                         // Calling the injected manager rather than BaseItem.UpdateToRepositoryAsync,
                         // which resolves the parent through the static BaseItem.LibraryManager.
+                        //
+                        // MetadataDownload, never MetadataEdit. ItemUpdateType is a [Flags] enum
+                        // whose highest value is MetadataEdit, and ProviderManager treats
+                        // "updateType >= MetadataEdit" as a manual edit: it then rewrites an .nfo
+                        // beside the media whenever one already exists, even with local metadata
+                        // saving switched off. That write would happen while ParentIndexNumber is
+                        // still null, stripping <season> from the user's file. Anything below
+                        // MetadataEdit skips the savers, and persistence is unaffected either way
+                        // because UpdateItemsAsync saves to the database regardless of the reason.
                         await _libraryManager.UpdateItemAsync(
                             episode,
                             episode.GetParent(),
-                            ItemUpdateType.MetadataEdit,
+                            ItemUpdateType.MetadataDownload,
                             cancellationToken).ConfigureAwait(false);
                         cleared++;
                     }
