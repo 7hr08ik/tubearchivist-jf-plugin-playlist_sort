@@ -65,8 +65,31 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.Providers
                     ImageUrl = video.Channel.ThumbUrl,
                     Type = Data.Enums.PersonKind.Actor,
                 });
+                PlaylistAssignment? playlistAssignment = null;
+                if (Plugin.Instance?.Configuration.SortSeasonsByPlaylist == true)
+                {
+                    var playlistCache = PlaylistCache.GetInstance();
+                    playlistAssignment = await playlistCache.GetAssignmentAsync(videoTAId, cancellationToken).ConfigureAwait(true);
+
+                    if (playlistAssignment == null)
+                    {
+                        // Only bucket into "Unsorted" when the playlists were actually retrieved.
+                        // If TubeArchivist is unreachable the video falls back to its upload year,
+                        // which Jellyfin can still correct on a later refresh.
+                        if (await playlistCache.HasPlaylistDataAsync(cancellationToken).ConfigureAwait(true))
+                        {
+                            _logger.LogDebug("{Message}", string.Format(CultureInfo.CurrentCulture, "No TubeArchivist playlist found for video {0}. Grouping it into the {1} season.", videoTAId, Constants.UnsortedSeasonName));
+                            playlistAssignment = new PlaylistAssignment(string.Empty, Constants.UnsortedSeasonName, Constants.UnsortedSeasonNumber, 0);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("{Message}", string.Format(CultureInfo.CurrentCulture, "TubeArchivist playlists unavailable. Grouping video {0} by upload year.", videoTAId));
+                        }
+                    }
+                }
+
                 result.HasMetadata = true;
-                result.Item = video.ToEpisode();
+                result.Item = video.ToEpisode(playlistAssignment);
                 result.Item.Path = info.Path;
                 result.Provider = Name;
                 result.People = peopleInfo;

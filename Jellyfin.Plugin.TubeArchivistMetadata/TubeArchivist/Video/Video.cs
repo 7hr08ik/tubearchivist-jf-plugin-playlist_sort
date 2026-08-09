@@ -9,6 +9,7 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Jellyfin.Plugin.TubeArchivistMetadata.TubeArchivist
@@ -121,15 +122,38 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.TubeArchivist
         /// <returns>The video equivalent Jellyfin <see cref="Episode"/> object.</returns>
         public Episode ToEpisode()
         {
+            return ToEpisode(null);
+        }
+
+        /// <summary>
+        /// Converts the TubeArchivist API video to a Jellyfin <see cref="Episode"/> object,
+        /// optionally grouping it into the season representing its TubeArchivist playlist.
+        /// </summary>
+        /// <param name="playlistAssignment">
+        /// The playlist the video belongs to, or <c>null</c> to group the video by upload year.
+        /// </param>
+        /// <returns>The video equivalent Jellyfin <see cref="Episode"/> object.</returns>
+        public Episode ToEpisode(PlaylistAssignment? playlistAssignment)
+        {
+            // A null assignment always means "group by upload year". Deciding when an unassigned
+            // video belongs in the Unsorted season needs to know whether playlist data was actually
+            // retrieved, so the caller makes that call and passes an Unsorted assignment instead.
+            var seasonNumber = playlistAssignment?.SeasonNumber ?? Published.Year;
+            var seasonName = playlistAssignment?.SeasonName ?? Published.Year.ToString(CultureInfo.CurrentCulture);
+
             return new Episode
             {
                 Name = Title,
                 Overview = Utils.FormatDescription(Description),
-                SeasonName = Published.Year.ToString(CultureInfo.CurrentCulture),
-                ParentIndexNumber = Published.Year,
+
+                // Jellyfin overwrites SeasonName from the parent Season entity; it is set here only
+                // for consistency. Season naming is handled by SeasonMetadataProvider.
+                SeasonName = seasonName,
+                ParentIndexNumber = seasonNumber,
                 IndexNumber = Plugin.Instance?.Configuration?.EpisodeNumberingScheme switch
                 {
                     NumberingScheme.YYYYMMDD => (Published.Year * 10000) + (Published.Month * 100) + Published.Day,
+                    NumberingScheme.PlaylistIndex => playlistAssignment?.Index,
                     _ => null
                 },
                 SeriesName = Channel.Name,
