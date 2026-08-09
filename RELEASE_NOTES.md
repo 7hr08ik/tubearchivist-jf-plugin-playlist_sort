@@ -108,9 +108,6 @@ seasons kept their playlist names. This holds even though `MergeData` does gate 
 item with the *existing* `ParentIndexNumber` before any provider runs, so the value is never empty
 and the plugin is not asked to supply a new one.
 
-**To fully revert**, disable the setting and then remove the affected seasons so Jellyfin recreates
-them on the next scan.
-
 ### The same limit applies when first enabling the feature
 
 This is the important consequence for existing installations. Because `ParentIndexNumber` is sticky
@@ -121,12 +118,33 @@ New episodes imported after enabling the setting are grouped by playlist correct
 scanned for the first time with the setting already on is grouped entirely by playlist — verified on
 a brand-new library.
 
-To convert an existing year-grouped library, delete its **Season** entities (never the Series) and
-rescan.
+### 3. Converting an existing library: run the "Rebuild playlist seasons" task
 
-> ⚠️ **Do not delete the Series to reset it.** In Jellyfin, `DELETE /Items/{id}` on a Series, Season
-> or Episode **deletes the media files from disk**. There is no trash or recycle bin. Delete only the
-> Season entities, or point a throwaway library at a copy of the media.
+**Dashboard → Scheduled Tasks → Rebuild playlist seasons → run manually.**
+
+The task clears each episode's stored season number in libraries matching the configured collection
+title, then refreshes them so the current setting decides the season afresh. It works in both
+directions: enabling the setting regroups a year-based library by playlist, and disabling it returns
+episodes to upload-year seasons.
+
+It has no automatic trigger. Regrouping a library is disruptive enough that it should happen when you
+choose, not as a side effect of saving a settings page.
+
+**It deletes nothing.** Only the season number field on each episode is modified. Verified on a
+116-episode library: media files untouched, watch state and resume positions preserved, no orphaned
+seasons left behind. Jellyfin removes the now-empty old seasons by itself.
+
+Season *names* may briefly read "Season Unknown" immediately afterwards. That is a cached field on
+the episode and the next library refresh restores the correct name.
+
+> **Deleting the seasons by hand does not work** — worth stating, because it is the obvious approach.
+> Jellyfin derives a season's item id deterministically from its series and index number, and
+> deleting a season does not clear its episodes' stored season number, so a rescan recreates exactly
+> the same seasons. Measured: 30 seasons deleted, 0 episodes moved.
+
+> ⚠️ **Never delete a Series or Episode to reset state.** In Jellyfin, `DELETE /Items/{id}` on a
+> file-backed item **deletes the media from disk**, and there is no trash or recycle bin. The task
+> above avoids deletion entirely for exactly this reason.
 
 ---
 

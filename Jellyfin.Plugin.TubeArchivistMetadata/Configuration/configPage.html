@@ -64,10 +64,12 @@
                         <div class="fieldDescription">Groups episodes into seasons named after their TubeArchivist
                             playlist instead of their upload year. Videos which do not belong to any playlist are
                             grouped into a season named "Unsorted".</div>
-                        <div class="fieldDescription" style="color: #cc5b5b;">After changing this setting, run Refresh
-                            metadata with "Replace all metadata" enabled. Jellyfin keeps an episode's existing season
-                            once it is set, so a normal library scan will not move episodes that have already been
-                            imported.</div>
+                        <div class="fieldDescription" style="color: #cc5b5b;">After changing this setting, run the
+                            "Rebuild playlist seasons" task from Dashboard &rarr; Scheduled Tasks. Jellyfin keeps an
+                            episode's existing season once it is set, so neither a library scan nor a "Replace all
+                            metadata" refresh will move episodes which have already been imported. The task deletes
+                            nothing: it clears each episode's stored season number so the setting above can be applied
+                            again.</div>
                     </div>
                     <div>
                         <h2>Synchronization</h2>
