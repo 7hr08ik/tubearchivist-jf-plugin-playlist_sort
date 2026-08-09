@@ -8,11 +8,11 @@
 
 This fork, was made as a personal AI Slop project. 
 
-I love the idea behind TubeArchivist, and having it all working automagikally through Jellyfin. But I want the videos sorted by Playlist, NOT by year. I watch a couple of toYoubers that make LetPlay's, with this plugin, I things weren't sorted right for me. I want to be able to goto Jellyfin, select Gopher, then Click on Skyrim or Stalker 2. Thats it.
+I love the idea behind TubeArchivist, and having it all working automagically through Jellyfin. But I want the videos sorted by Playlist, NOT by year. I watch a couple of YouTubers that make LetPlay's, and with this plugin things weren't sorted right for me. I want seasons Named as the playlist is named.
 
-So I vibe slopped this with my own [Opencode Setup](https://github.com/7hr08ik/AMPG-Opencode-and-Friends), on locally hosted AI. 
+So I vibe slopped this with my own [Opencode Setup](https://github.com/7hr08ik/AMPG-Opencode-and-Friends), on locally hosted AI and some free APIs.
 
-All this does, is add the ability to sort by Playlist instead of Year in Jellyfin. The rest of this Readme is from the original repo.
+All this does, is add the ability to sort by Playlist instead of Year in Jellyfin. I updated the Readme to reflect my changes.
 
 --
 
