@@ -123,9 +123,14 @@ a brand-new library.
 **Dashboard → Scheduled Tasks → Rebuild playlist seasons → run manually.**
 
 The task clears each episode's stored season number in libraries matching the configured collection
-title, then refreshes them so the current setting decides the season afresh. It works in both
+title, then refreshes them so the current setting decides the season afresh. It finishes by
+refreshing the affected series, which is what rebuilds the seasons themselves. It works in both
 directions: enabling the setting regroups a year-based library by playlist, and disabling it returns
 episodes to upload-year seasons.
+
+Both phases matter. Reassigning an episode does not create the season it now belongs to, so without
+the second phase the library shows the previous seasons standing empty. Progress reflects this: the
+first 90% is the episodes, the remainder is the seasons. Let it reach 100%.
 
 It has no automatic trigger. Regrouping a library is disruptive enough that it should happen when you
 choose, not as a side effect of saving a settings page.
@@ -136,6 +141,9 @@ seasons left behind. Jellyfin removes the now-empty old seasons by itself.
 
 Season *names* may briefly read "Season Unknown" immediately afterwards. That is a cached field on
 the episode and the next library refresh restores the correct name.
+
+If a series does fail to refresh, an error naming it is logged and the remaining series still run.
+That series keeps its old seasons, which appear empty; a library scan corrects it.
 
 **If you keep `.nfo` files next to your media, they win.** An `.nfo` containing `<season>` is a local
 metadata source, and Jellyfin prefers it over anything this plugin supplies, so those episodes stay
