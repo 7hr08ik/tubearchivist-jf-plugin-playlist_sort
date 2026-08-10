@@ -83,21 +83,30 @@ playlist (this fork's feature). The plugin fetches metadata and images from the 
 
 ## Installation
 
-> [!IMPORTANT]
-> This fork is **not** published to a plugin repository and has no GitHub releases. Build it from
-> source and copy the DLL in. It appears in the dashboard as
-> **TubeArchivist Metadata-playlist_sort** so you can tell it apart from the upstream plugin.
+### From playlist\_sort repository (recommended)
 
-### Requirements
+1. Go to `Dashboard -> Plugins` and click on the `Manage Repositories` button
+2. Add a new repository with the following details:
 
-| | |
-|---|---|
-| Jellyfin | 10.11 or later |
-| TubeArchivist | a running instance, reachable from Jellyfin |
-| Library type | a `Shows` library pointed at your TubeArchivist media |
-| To build | [.NET 9 SDK](https://dotnet.microsoft.com/download) |
+   - **Repository name:** `TubeArchivistMetadata-playlist_sort`
+   - **Repository URL:** `https://github.com/7hr08ik/tubearchivist-jf-plugin/raw/master/manifest.json`
+
+3. Go back to the catalog
+4. Find `TubeArchivistMetadata` and install it
+5. Restart Jellyfin to apply the changes
+
+### From ZIP in GitHub releases
+
+1. Download the latest available release (`tubearchivistmetadata_*.zip`) from the
+   [repository releases](https://github.com/7hr08ik/tubearchivist-jf-plugin/releases) section
+2. Extract the contained files into the `plugins/TubeArchivistMetadata` folder of your Jellyfin
+   installation (you might need to create the folder)
+3. Restart Jellyfin to apply the changes
 
 ### Build from source
+
+The plugin requires a running TubeArchivist instance and a
+[.NET 9 SDK](https://dotnet.microsoft.com/download) to build.
 
 ```bash
 git clone https://github.com/7hr08ik/tubearchivist-jf-plugin.git
@@ -105,16 +114,12 @@ cd tubearchivist-jf-plugin
 dotnet publish Jellyfin.Plugin.TubeArchivistMetadata -c Release -o bin
 ```
 
-### Install
+Then copy **only** `bin/Jellyfin.Plugin.TubeArchivistMetadata.dll` into the
+`plugins/TubeArchivistMetadata` folder of your Jellyfin installation and restart Jellyfin.
 
-1. Copy **only** `bin/Jellyfin.Plugin.TubeArchivistMetadata.dll` into the
-   `plugins/TubeArchivistMetadata` folder of your Jellyfin installation, creating it if needed.
-
-   `dotnet publish` also writes ~30 Jellyfin dependency DLLs into `bin`. Do not copy those &mdash; they
-   shadow the server's own assemblies and can stop the plugin loading.
-
-2. Match the ownership and permissions Jellyfin uses for its other plugin files.
-3. Restart Jellyfin.
+> [!NOTE]
+> `dotnet publish` also writes ~30 Jellyfin dependency DLLs into `bin`. Do not copy those &mdash; they
+> shadow the server's own assemblies and can stop the plugin loading.
 
 ### Upgrading from the upstream plugin
 
