@@ -19,9 +19,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get release version
-        id: newtag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+      - name: Get version from current tag
+        id: get_version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          VERSION=$(echo "$TAG" | awk -F. '{printf "%d.%d.%d.%d", $1, $2, $3, ($4==""?0:$4)}')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "TAG=v$TAG" >> $GITHUB_ENV
 
       - name: Setup .Net
         uses: actions/setup-dotnet@v1
@@ -36,35 +40,24 @@ jobs:
             --store-password-in-clear-text \
             --name github https://nuget.pkg.github.com/jellyfin/index.json
 
-      - name: Get version number only
-        run: |
-          TAG=${{ steps.newtag.outputs.tag }}
-          echo "VERSION=${TAG#v}" >> $GITHUB_ENV
-
       - name: Generate release message
         run: |
-          # Read the YAML file and extract the value of the 'changelog' field
           changelog=$(awk '/changelog:/ {flag=1; next} /^[^ ]/ {flag=0} flag' build.yaml | awk '{$1=$1};1')
-
-          # Check if changelog contains multiple lines
           if [[ $(echo "$changelog" | wc -l) -gt 1 ]]; then
               changelog=$(echo "$changelog" | sed 's/^/* /')
           else
               changelog="* $changelog"
           fi
-
-          # Create release-changelog.md
           echo "Changelog:" > release-changelog.md
           echo "$changelog" >> release-changelog.md
-
 
       - name: Build Jellyfin Plugin
         uses: DarkFighterLuke/jellyfin-plugin-repository-manager@7a96768accc155ac7b597351b5033532f3c48173
         id: jprm
         with:
           dotnet-target: net9.0
-          version: ${VERSION}
-          update-manifest: "true"
+          version: ${{ env.VERSION }}
+          update-manifest: "false"
 
       - name: Create release
         uses: ncipollo/release-action@v1
@@ -73,16 +66,94 @@ jobs:
           artifacts: ${{ steps.jprm.outputs.artifact }}
           makeLatest: latest
           bodyFile: release-changelog.md
-          tag: ${{ steps.newtag.outputs.tag }}
+          tag: ${{ env.TAG }}
           allowUpdates: true
 
-      - name: Checkout master
-        run: git checkout master
+      - name: Prepare manifest update variables
+        id: manifest_vars
+        run: |
+          ARTIFACT_PATH="${{ steps.jprm.outputs.artifact }}"
+          ARTIFACT_NAME=$(basename "$ARTIFACT_PATH")
+          CHECKSUM=$(md5sum "$ARTIFACT_PATH" | cut -d' ' -f1)
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          TARGET_ABI=$(grep '^targetAbi:' build.yaml | cut -d' ' -f2- | tr -d '"')
+          CHANGELOG=$(awk '/changelog:/ {flag=1; next} /^[^ ]/ {flag=0} flag' build.yaml | awk '{$1=$1};1')
+          CHANGELOG_ESCAPED=$(echo "$CHANGELOG" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+          
+          echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+          echo "CHECKSUM=$CHECKSUM" >> $GITHUB_OUTPUT
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "TARGET_ABI=$TARGET_ABI" >> $GITHUB_OUTPUT
+          echo "CHANGELOG_ESCAPED=$CHANGELOG_ESCAPED" >> $GITHUB_OUTPUT
+
+      - name: Write manifest update script
+        run: |
+          python3 -c "
+import base64
+script = b'''
+import json
+import os
+import sys
+
+version = os.environ[\"VERSION\"]
+tag = os.environ[\"TAG\"]
+artifact_name = os.environ[\"ARTIFACT_NAME\"]
+checksum = os.environ[\"CHECKSUM\"]
+timestamp = os.environ[\"TIMESTAMP\"]
+changelog = os.environ[\"CHANGELOG_ESCAPED\"]
+target_abi = os.environ[\"TARGET_ABI\"]
+github_repo = os.environ[\"GITHUB_REPOSITORY\"]
+
+with open(\"manifest.json\", \"r\") as f:
+    manifest = json.load(f)
+
+new_version = {
+    \"version\": version,
+    \"changelog\": changelog,
+    \"targetAbi\": target_abi,
+    \"sourceUrl\": f\"https://github.com/{github_repo}/releases/download/{tag}/{artifact_name}\",
+    \"checksum\": checksum,
+    \"timestamp\": timestamp
+}
+
+found = False
+for plugin in manifest:
+    for i, v in enumerate(plugin[\"versions\"]):
+        if v[\"version\"] == new_version[\"version\"]:
+            plugin[\"versions\"][i] = new_version
+            found = True
+            break
+    if not found:
+        plugin[\"versions\"].insert(0, new_version)
+
+with open(\"manifest.json\", \"w\") as f:
+    json.dump(manifest, f, indent=4)
+
+print(\"manifest.json updated successfully\")
+'''
+with open('update_manifest.py', 'wb') as f:
+    f.write(script)
+"
+
+      - name: Update manifest.json on master
+        run: |
+          git fetch origin master:master
+          git checkout master
+          python3 update_manifest.py
+        env:
+          VERSION: ${{ env.VERSION }}
+          TAG: ${{ env.TAG }}
+          ARTIFACT_NAME: ${{ steps.manifest_vars.outputs.ARTIFACT_NAME }}
+          CHECKSUM: ${{ steps.manifest_vars.outputs.CHECKSUM }}
+          TIMESTAMP: ${{ steps.manifest_vars.outputs.TIMESTAMP }}
+          CHANGELOG_ESCAPED: ${{ steps.manifest_vars.outputs.CHANGELOG_ESCAPED }}
+          TARGET_ABI: ${{ steps.manifest_vars.outputs.TARGET_ABI }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
 
       - name: Commit manifest.json
         uses: EndBug/add-and-commit@v9
         with:
           add: manifest.json
           commit: --signoff
-          message: "Update manifest.json"
+          message: "Update manifest.json for ${{ env.TAG }}"
           pull: "--no-rebase -X ours origin master"
