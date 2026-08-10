@@ -14,6 +14,11 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.Utilities
         private const string TAPlaylistNameFormatRegex = @"^(.*)\s\((.*)\)$";
 
         /// <summary>
+        /// Maximum length of a season name derived from a TubeArchivist playlist name.
+        /// </summary>
+        private const int MaxSeasonNameLength = 120;
+
+        /// <summary>
         /// Sanitizes the given URL.
         /// </summary>
         /// <param name="inputUrl">An URL string.</param>
@@ -168,6 +173,51 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.Utilities
             }
 
             return name;
+        }
+
+        /// <summary>
+        /// Sanitizes a TubeArchivist playlist name for use as a Jellyfin season name.
+        /// </summary>
+        /// <remarks>
+        /// Season names are stored in the Jellyfin database rather than used as file paths, so this
+        /// only normalises whitespace, strips control characters and caps the length. Punctuation is
+        /// preserved so seasons read the same as they do in TubeArchivist.
+        /// </remarks>
+        /// <param name="playlistName">The TubeArchivist playlist name.</param>
+        /// <param name="fallback">Value to use when the playlist name is missing or blank, normally the playlist id.</param>
+        /// <returns>A season name safe to persist, never null or empty.</returns>
+        public static string SanitizePlaylistName(string? playlistName, string? fallback)
+        {
+            var sanitized = playlistName ?? string.Empty;
+
+            // Strip control characters (e.g. stray newlines) before collapsing whitespace.
+            sanitized = new string(sanitized.Where(c => !char.IsControl(c)).ToArray());
+            sanitized = Regex.Replace(sanitized, @"\s+", " ").Trim();
+
+            if (string.IsNullOrEmpty(sanitized))
+            {
+                sanitized = (fallback ?? string.Empty).Trim();
+            }
+
+            if (string.IsNullOrEmpty(sanitized))
+            {
+                return Constants.UnsortedSeasonName;
+            }
+
+            if (sanitized.Length > MaxSeasonNameLength)
+            {
+                // Cutting between a surrogate pair would leave a lone surrogate, which XmlSerializer
+                // refuses to write, breaking the whole plugin configuration save.
+                var cut = MaxSeasonNameLength;
+                if (char.IsHighSurrogate(sanitized[cut - 1]))
+                {
+                    cut--;
+                }
+
+                sanitized = sanitized.Substring(0, cut).TrimEnd();
+            }
+
+            return sanitized;
         }
     }
 }

@@ -46,12 +46,30 @@
                         <select is="emby-select" id="EpisodeNumberingScheme" name="EpisodeNumberingScheme" label="Description markup" class="emby-select-withcolor emby-select">
                             <option value="Default">Default (no specified numbering)</option>
                             <option value="YYYYMMDD">YYYYMMDD (e.g. 20250804 for August 4th, 2025)</option>
+                            <option value="PlaylistIndex">Playlist index (position within the TubeArchivist playlist)</option>
                         </select>
                         <div class="selectArrowContainer">
                             <span class="selectArrow material-icons keyboard_arrow_down" aria-hidden="true"></span>
                         </div>
                         <div class="fieldDescription">This is the numbering scheme for episodes in Jellyfin (IndexNumber).
                             Default is the same as no numbering which allows Jellyfin to use the fallback numbering scheme.
+                            Playlist index requires "Group seasons by TubeArchivist playlist" below and falls back to
+                            Default for videos which are not in any playlist.
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label" for="SortSeasonsByPlaylist">
+                            <input id="SortSeasonsByPlaylist" name="SortSeasonsByPlaylist" type="checkbox" is="emby-checkbox" />
+                            <span>Group seasons by TubeArchivist playlist</span>
+                        </label>
+                        <div class="fieldDescription">Groups episodes into seasons named after their TubeArchivist
+                            playlist instead of their upload year. Videos which do not belong to any playlist are
+                            grouped into a season named "Unsorted".</div>
+                        <div class="fieldDescription" style="color: #cc5b5b;">After changing this setting, run the
+                            "Rebuild playlist seasons" task from Dashboard &rarr; Scheduled Tasks. Jellyfin keeps an
+                            episode's existing season once it is set, so neither a library scan nor a "Replace all
+                            metadata" refresh will move episodes which have already been imported. The task deletes
+                            nothing: it clears each episode's stored season number so the setting above can be applied
+                            again.</div>
                     </div>
                     <div>
                         <h2>Synchronization</h2>
@@ -173,6 +191,7 @@
                         document.querySelector('#TAJFPlaylistsSync').checked = config.TAJFPlaylistsSync;
                         document.querySelector('#JFUsernameFrom').value = config.JFUsernameFrom;
                         document.querySelector('#EpisodeNumberingScheme').value = config.EpisodeNumberingScheme;
+                        document.querySelector('#SortSeasonsByPlaylist').checked = config.SortSeasonsByPlaylist;
                         document.querySelector('#TAJFProgressTaskInterval').value = config.TAJFProgressTaskInterval;
                         document.querySelector('#JFTAPlaylistsSyncTaskInterval').value = config.JFTAPlaylistsSyncTaskInterval;
                         document.querySelector('#TAJFPlaylistsSyncTaskInterval').value = config.TAJFPlaylistsSyncTaskInterval;
@@ -195,6 +214,7 @@
                         config.TAJFPlaylistsSync = document.querySelector('#TAJFPlaylistsSync').checked;
                         config.JFUsernameFrom = document.querySelector('#JFUsernameFrom').value;
                         config.EpisodeNumberingScheme = document.querySelector('#EpisodeNumberingScheme').value;
+                        config.SortSeasonsByPlaylist = document.querySelector('#SortSeasonsByPlaylist').checked;
                         config.TAJFProgressTaskInterval = document.querySelector('#TAJFProgressTaskInterval').value;
                         config.JFTAPlaylistsSyncTaskInterval = document.querySelector('#JFTAPlaylistsSyncTaskInterval').value;
                         config.TAJFPlaylistsSyncTaskInterval = document.querySelector('#TAJFPlaylistsSyncTaskInterval').value;

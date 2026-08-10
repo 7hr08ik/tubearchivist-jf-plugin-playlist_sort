@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -233,16 +234,21 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.TubeArchivist
                     var lastPage = playlists.Paginate.LastPage;
                     _logger.LogInformation("Pagination info: Current page {CurrentPage} / Last page {LastPage}, Total hits: {TotalHits}", playlists.Paginate.CurrentPage, playlists.Paginate.LastPage, playlists.Paginate.TotalHits);
 
-                    while (playlists.Paginate.CurrentPage < lastPage)
+                    // The unnumbered request above already returned the first page of results.
+                    // TubeArchivist treats "?page=0" and "?page=1" as that same first page, so
+                    // continuing from Paginate.CurrentPage + 1 re-fetches it and duplicates every
+                    // playlist. Additional pages therefore start at 2.
+                    for (var nextPage = 2; nextPage <= lastPage; nextPage++)
                     {
-                        var nextPage = playlists.Paginate.CurrentPage + 1;
-                        var pagedUrl = new Uri(Utils.SanitizeUrl(Plugin.Instance?.Configuration.TubeArchivistUrl + playlistsEndpoint + "?page=" + nextPage));
+                        var pagedUrl = new Uri(Utils.SanitizeUrl(Plugin.Instance?.Configuration.TubeArchivistUrl + playlistsEndpoint + "?page=" + nextPage.ToString(CultureInfo.InvariantCulture)));
                         response = await client.GetAsync(pagedUrl).ConfigureAwait(true);
                         while (response.StatusCode == HttpStatusCode.Moved)
                         {
-                            url = response.Headers.Location;
-                            _logger.LogInformation("{Message}", "Received redirect to: " + url);
-                            response = await client.GetAsync(Utils.SanitizeUrl(Plugin.Instance?.Configuration.TubeArchivistUrl + url)).ConfigureAwait(true);
+                            // Location is absolute, so it is followed as-is (matching GetChannel and
+                            // GetVideo). Prefixing the configured base URL would corrupt it.
+                            var redirectUrl = response.Headers.Location;
+                            _logger.LogInformation("{Message}", "Received redirect to: " + redirectUrl);
+                            response = await client.GetAsync(redirectUrl).ConfigureAwait(true);
                         }
 
                         _logger.LogInformation("{Message}", pagedUrl + ": " + response.StatusCode);
@@ -261,8 +267,7 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.TubeArchivist
 
                             if (nextPagePlaylists?.Paginate != null)
                             {
-                                playlists.Paginate = nextPagePlaylists.Paginate;
-                                _logger.LogInformation("Pagination info: Current page {CurrentPage} / Last page {LastPage}, Total hits: {TotalHits}", playlists.Paginate.CurrentPage, playlists.Paginate.LastPage, playlists.Paginate.TotalHits);
+                                _logger.LogInformation("Pagination info: Current page {CurrentPage} / Last page {LastPage}, Total hits: {TotalHits}", nextPagePlaylists.Paginate.CurrentPage, nextPagePlaylists.Paginate.LastPage, nextPagePlaylists.Paginate.TotalHits);
                             }
                         }
                         else

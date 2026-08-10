@@ -6,9 +6,15 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata
     public static class Constants
     {
         /// <summary>
-        /// Plugin name.
+        /// Plugin name, as shown in the Jellyfin dashboard.
         /// </summary>
-        public const string PluginName = "TubeArchivist Metadata";
+        /// <remarks>
+        /// The <c>-playlist_sort</c> suffix marks this fork so it is distinguishable from the
+        /// upstream plugin at a glance. This is a display name only. It must not be confused with
+        /// <see cref="ProviderName"/>, which is persisted against every item, nor with the assembly
+        /// name, from which Jellyfin derives the configuration file name.
+        /// </remarks>
+        public const string PluginName = "TubeArchivist Metadata-playlist_sort";
 
         /// <summary>
         /// Plugin GUID.
@@ -19,5 +25,19 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata
         /// Providers name.
         /// </summary>
         public const string ProviderName = "TubeArchivist";
+
+        /// <summary>
+        /// Season number used to group videos which do not belong to any TubeArchivist playlist.
+        /// </summary>
+        /// <remarks>
+        /// Season 0 cannot be used: Jellyfin's <c>SeasonMetadataService.BeforeSaveInternal</c>
+        /// force-renames season 0 to the library's "Specials" display name.
+        /// </remarks>
+        public const int UnsortedSeasonNumber = 9000;
+
+        /// <summary>
+        /// Display name of the season grouping videos which do not belong to any TubeArchivist playlist.
+        /// </summary>
+        public const string UnsortedSeasonName = "Unsorted";
     }
 }
