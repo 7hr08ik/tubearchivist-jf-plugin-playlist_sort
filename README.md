@@ -89,7 +89,7 @@ playlist (this fork's feature). The plugin fetches metadata and images from the 
 2. Add a new repository with the following details:
 
    - **Repository name:** `TubeArchivistMetadata-playlist_sort`
-   - **Repository URL:** `https://github.com/7hr08ik/tubearchivist-jf-plugin/raw/master/manifest.json`
+   - **Repository URL:** `https://github.com/7hr08ik/tubearchivist-jf-plugin-playlist_sort/raw/master/manifest.json`
 
 3. Go back to the catalog
 4. Find `TubeArchivistMetadata` and install it
@@ -98,7 +98,7 @@ playlist (this fork's feature). The plugin fetches metadata and images from the 
 ### From ZIP in GitHub releases
 
 1. Download the latest available release (`tubearchivistmetadata_*.zip`) from the
-   [repository releases](https://github.com/7hr08ik/tubearchivist-jf-plugin/releases) section
+   [repository releases](https://github.com/7hr08ik/tubearchivist-jf-plugin-playlist_sort/releases) section
 2. Extract the contained files into the `plugins/TubeArchivistMetadata` folder of your Jellyfin
    installation (you might need to create the folder)
 3. Restart Jellyfin to apply the changes
@@ -109,8 +109,8 @@ The plugin requires a running TubeArchivist instance and a
 [.NET 9 SDK](https://dotnet.microsoft.com/download) to build.
 
 ```bash
-git clone https://github.com/7hr08ik/tubearchivist-jf-plugin.git
-cd tubearchivist-jf-plugin
+git clone https://github.com/7hr08ik/tubearchivist-jf-plugin-playlist_sort.git
+cd tubearchivist-jf-plugin-playlist_sort
 dotnet publish Jellyfin.Plugin.TubeArchivistMetadata -c Release -o bin
 ```
 
@@ -145,7 +145,7 @@ the plugin settings page:
 - **Group seasons by TubeArchivist playlist** &mdash; enables the fork's feature (see [Playlist seasons](#playlist-seasons))
 - **Playback synchronization** settings &mdash; see [Playback synchronization](#playback-synchronization)
 
-![Plugin configuration](https://github.com/7hr08ik/tubearchivist-jf-plugin/assets/31162436/d34464ea-ddfb-44b3-9d3e-5d5974956c58)
+![Plugin configuration](https://github.com/7hr08ik/tubearchivist-jf-plugin-playlist_sort/assets/31162436/d34464ea-ddfb-44b3-9d3e-5d5974956c58)
 
 ## Use the plugin
 
@@ -156,7 +156,7 @@ the plugin settings page:
 1. Go to **Dashboard &rarr; Libraries** and add a media library.
 2. Select **Shows** as the content type, set a display name, and add your TubeArchivist media folder.
 
-   ![Add library](https://github.com/7hr08ik/tubearchivist-jf-plugin/assets/31162436/1eca534e-0929-4134-8587-3cff0009f618)
+   ![Add library](https://github.com/7hr08ik/tubearchivist-jf-plugin-playlist_sort/assets/31162436/1eca534e-0929-4134-8587-3cff0009f618)
 
 3. Scrolling down, uncheck all metadata and image providers except **TubeArchivist**. This fork
    **does** provide a Season metadata provider, so leave **TubeArchivist** enabled under Seasons as
@@ -353,8 +353,8 @@ the Jellyfin ruleset, so any warning fails the build.
 To build and run locally:
 
 ```bash
-git clone https://github.com/7hr08ik/tubearchivist-jf-plugin.git
-cd tubearchivist-jf-plugin
+git clone https://github.com/7hr08ik/tubearchivist-jf-plugin-playlist_sort.git
+cd tubearchivist-jf-plugin-playlist_sort
 dotnet build                                    # Debug build (warnings are errors)
 dotnet publish Jellyfin.Plugin.TubeArchivistMetadata -c Release -o bin   # Release -> ./bin
 ```
