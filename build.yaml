@@ -1,16 +1,17 @@
 ---
 name: "TubeArchivistMetadata"
 guid: "dc97d0c6-28b0-4242-afb4-5833ae1b3715"
-imageUrl: https://raw.githubusercontent.com/tubearchivist/tubearchivist-jf-plugin/master/images/logo.png
+imageUrl: https://raw.githubusercontent.com/7hr08ik/tubearchivist-jf-plugin/master/images/logo.png
 version: "1.5.0.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
-overview: "Metadata for your TubeArchivist library on Jellyfin"
+overview: "Metadata for your TubeArchivist library on Jellyfin (playlist_sort fork)"
 description: >
   TubeArchivistMetadata is a plugin that automatically manages
   metadata for videos downloaded with TubeArchivist from YouTube.
+  This fork adds playlist-based season grouping.
 category: "Metadata"
-owner: "DarkFighterLuke"
+owner: "7hr08ik"
 artifacts:
 - "Jellyfin.Plugin.TubeArchivistMetadata.dll"
 changelog: >
