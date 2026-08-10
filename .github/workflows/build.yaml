@@ -76,6 +76,9 @@ jobs:
           tag: ${{ steps.newtag.outputs.tag }}
           allowUpdates: true
 
+      - name: Checkout master
+        run: git checkout master
+
       - name: Commit manifest.json
         uses: EndBug/add-and-commit@v9
         with:
