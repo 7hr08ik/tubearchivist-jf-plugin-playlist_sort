@@ -13,7 +13,7 @@ body:
     attributes:
       label: "I've read the documentation"
       options:
-        - label: I'm running the latest version of tubearchivist-jf-plugin.
+        - label: I'm running the latest version of tubearchivist-jf-plugin-playlist_sort.
           required: true
         - label: I'm running the latest version of TubeArchivist.
           required: true
