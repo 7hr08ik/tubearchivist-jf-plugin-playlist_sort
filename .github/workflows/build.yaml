@@ -31,7 +31,7 @@ jobs:
       - name: Add Jellyfin GitHub Nuget registry to sources
         run: |
           dotnet nuget add source \
-            --username DarkFighterLuke \
+            --username 7hr08ik \
             --password ${{ secrets.GITHUB_TOKEN }} \
             --store-password-in-clear-text \
             --name github https://nuget.pkg.github.com/jellyfin/index.json
@@ -59,7 +59,7 @@ jobs:
 
 
       - name: Build Jellyfin Plugin
-        uses: DarkFighterLuke/jellyfin-plugin-repository-manager@7a96768accc155ac7b597351b5033532f3c48173
+        uses: 7hr08ik/jellyfin-plugin-repository-manager@7a96768accc155ac7b597351b5033532f3c48173
         id: jprm
         with:
           dotnet-target: net9.0
