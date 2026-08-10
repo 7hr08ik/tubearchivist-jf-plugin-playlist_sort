@@ -12,8 +12,8 @@
                 "version": "1.5.0.0",
                 "changelog": "Group seasons by TubeArchivist playlist instead of upload year\nAdd playlist index episode numbering scheme\nFix duplicated playlists caused by first-page pagination\nFix redirect handling while paging playlists\n",
                 "targetAbi": "10.11.0.0",
-                "sourceUrl": "https://github.com/7hr08ik/tubearchivist-jf-plugin-playlist_sort/releases/download/v1.5.0/tubearchivistmetadata_1.5.0.0.zip",
-                "checksum": "PENDING",
+                "sourceUrl": "https://github.com/7hr08ik/tubearchivist-jf-plugin-playlist_sort/releases/download/v1.5.0/tubearchivistmetadata-playlistsort_1.5.0.0.zip",
+                "checksum": "f1d56bea4ed0b65966dc6ffc33e60c6f",
                 "timestamp": "2026-08-10T00:00:00Z"
             },
             {
