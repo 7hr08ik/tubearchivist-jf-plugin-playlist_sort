@@ -9,7 +9,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace Jellyfin.Plugin.TubeArchivistMetadata.TubeArchivist
@@ -153,7 +152,7 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.TubeArchivist
                 IndexNumber = Plugin.Instance?.Configuration?.EpisodeNumberingScheme switch
                 {
                     NumberingScheme.YYYYMMDD => (Published.Year * 10000) + (Published.Month * 100) + Published.Day,
-                    NumberingScheme.PlaylistIndex => playlistAssignment?.Index,
+                    NumberingScheme.PlaylistIndex => !string.IsNullOrEmpty(playlistAssignment?.PlaylistId) ? playlistAssignment?.Index : null,
                     _ => null
                 },
                 SeriesName = Channel.Name,

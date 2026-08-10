@@ -199,7 +199,7 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.TubeArchivist
             {
                 playlists = await taApi.GetPlaylists().ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JsonException)
+            catch (Exception ex) when (ex is HttpRequestException or JsonException)
             {
                 // Failure policy: keep whatever is cached and let callers fall back to upload year
                 // grouping. A partial migration is worse than no migration.
@@ -443,7 +443,7 @@ namespace Jellyfin.Plugin.TubeArchivistMetadata.TubeArchivist
                     return video.Published;
                 }
             }
-            catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JsonException)
+            catch (Exception ex) when (ex is HttpRequestException or JsonException)
             {
                 _logger.LogDebug(ex, "Could not resolve a sort date for playlist {PlaylistId}.", playlist.Id);
             }
